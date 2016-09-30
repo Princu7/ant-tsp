@@ -7,6 +7,7 @@ const int inf = 1e9 + 7;
 
 vector<pii> graph[100100];
 vector<edge> edges;
+int adj[1004][1004];
 int dist[1000][1000];
 double pheromone[1001][1001];
 double lazy[1001][1001];
@@ -53,7 +54,7 @@ int getnext(int from, bool* visited) {
 	for (auto i: graph[from]) {
 		int vertex = i.first;
 		if (visited[vertex] == 0) {
-			double v = pheromone[from][vertex] / (dist[from][vertex] * dist[from][vertex]);
+			double v = pheromone[from][vertex] / (adj[from][vertex] * adj[from][vertex]);
 			sum += v;
 			prob.push_back(make_pair(vertex, sum));
 		}
@@ -98,7 +99,7 @@ int tour(vector<int>& path) {
 			return -1;
 		}
 		visited[nxt] = 1;
-		len += dist[here][nxt];
+		len += adj[here][nxt];
 		here = nxt;
 		cnt++;
 	}
@@ -117,7 +118,11 @@ void evaporate() {
 
 int main(void) {
 	srand(time(NULL));
-	memset(pheromone, 1.0, sizeof(pheromone));
+    for(int i=0; i<100; i++)
+    {
+        for(int j=0; j<100; j++)
+            pheromone[i][j] = 1;
+    }
 	scanf("%d %d", &n, &m);
 	for (int i = 0; i < m; i++) {
 		int u, v, w;
@@ -125,13 +130,16 @@ int main(void) {
 		graph[u].push_back(make_pair(v, w));
 		graph[v].push_back(make_pair(u, w));
 		edges.push_back(edge(u, v, w, 0));
+        adj[u][v] = w;
+        adj[v][u] = w;
 	}
 	allpairs();
-	int ants = n / 2;
-	int iter = 50000;
+	int ants = n / 2 + 1000;
+	int iter = 500;
 	int mn = INT_MAX;
 	vector<int> final_tour;
 	while (iter--) {
+        printf("iter = %d\n",500 - iter);
 		vector<int> paths[ants + 1];
 		int lengths[ants + 1];
 		// get every ant to tour
@@ -139,6 +147,13 @@ int main(void) {
 			lengths[i] = tour(paths[i]);
 			if (lengths[i] == -1) // no tour found
 				continue;
+            printf("ant no = %d\n", i);
+            for(int j=0; j<paths[i].size(); j++)
+            {
+                printf("%d ",paths[i][j]);
+            }
+            printf("lenght of path = %d\n", lengths[i]);
+            cout<<endl;
 			if (mn > lengths[i]) {
 				final_tour.clear();
 				for (auto x: paths[i])
@@ -147,7 +162,7 @@ int main(void) {
 			}
 		}
 
-		evaporate(); // evaporate pheromone from each edge by factor of 0.1
+		evaporate(); // evaporate pheromone from each edge by factor of 0.25
 
 		// increase pheromones according to each ant
 		for (int i = 0; i < ants; i++) {
@@ -155,7 +170,7 @@ int main(void) {
 				continue;
 			for (int j = 0; j < paths[i].size() - 1; j++) {
 				int u = paths[i][j], v = paths[i][j  + 1];
-				pheromone[u][v] += 1.0 / lengths[i];
+				pheromone[u][v] += 1000.0 / lengths[i];
 			}
 		}
 	}
